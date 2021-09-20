@@ -1,25 +1,28 @@
 import datetime
 import os
 
-from peewee import Model, CharField, BooleanField, ForeignKeyField, DateTimeField, IntegerField, TextField, \
+from dotenv import load_dotenv, find_dotenv
+from peewee import Model, CharField, BooleanField, DateTimeField, IntegerField, TextField, \
     BigIntegerField, PostgresqlDatabase
+
+load_dotenv(find_dotenv())
 
 postgre_db = PostgresqlDatabase(database=os.environ.get("DATABASE_NAME"), user=os.environ.get("DATABASE_USER"),
                                 password=os.environ.get("DATABASE_PASSWORD"),
                                 host=os.environ.get("DATABASE_HOST"),
-                                port=os.environ.get("DATABASE_PORT"), charset='utf8mb4', autoconnect=False)
+                                port=os.environ.get("DATABASE_PORT"), autoconnect=False)
 
 
 class BaseModel(Model):
     class Meta:
-        pass
+        database = postgre_db
 
 
 class NotCheckedHuman(BaseModel):
     name = CharField(max_length=100, null=False)
     lastname = CharField(max_length=100, null=False)
     secondname = CharField(max_length=100, null=True)
-    region = IntegerField()
+    region = IntegerField(null=True)
     is_checked = BooleanField(default=False, null=False)
 
 
