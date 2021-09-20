@@ -1,9 +1,13 @@
 import datetime
+import os
 
 from peewee import Model, CharField, BooleanField, ForeignKeyField, DateTimeField, IntegerField, TextField, \
-    BigIntegerField
+    BigIntegerField, PostgresqlDatabase
 
-postgre_db = None
+postgre_db = PostgresqlDatabase(database=os.environ.get("DATABASE_NAME"), user=os.environ.get("DATABASE_USER"),
+                                password=os.environ.get("DATABASE_PASSWORD"),
+                                host=os.environ.get("DATABASE_HOST"),
+                                port=os.environ.get("DATABASE_PORT"), charset='utf8mb4', autoconnect=False)
 
 
 class BaseModel(Model):
@@ -20,7 +24,6 @@ class NotCheckedHuman(BaseModel):
 
 
 class FSSPHuman(BaseModel):
-    whom_from = ForeignKeyField(NotCheckedHuman, backref="fssp_humans")
     name = CharField(max_length=100, null=False)
     lastname = CharField(max_length=100, null=False)
     secondname = CharField(max_length=100, null=True)
