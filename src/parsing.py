@@ -51,8 +51,6 @@ def make_group_request():
     first = query[:50]
     second = query[50:100]
     third = query[101:]
-    # pprint(first)
-    # pprint({"token": os.environ.get("API_KEY"), "request": first})
     response_1 = requests.post(url=API_URI + "/search/group",
                                json={"token": os.environ.get("API_KEY"), "request": first},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
@@ -78,6 +76,26 @@ def make_group_request():
     postgre_db.close()
 
 
+def get_group_result():
+    postgre_db.connect()
+    task_code = TaskCode.get(TaskCode.is_executed == False)
+    response = requests.get(url=API_URI + "/result",
+                            params={"token": os.environ.get("API_KEY"), "task": task_code.task_code})
+    # print(response.json())
+    for result_item in response.json()['response']['result']:
+        name = result_item['query']['params']['firstname']
+        lastname = result_item['query']['params']['lastname']
+        region = result_item['query']['params']['region']
+        if result_item['result']:
+            print(result_item['result'][0])
+            credentials = result_item['result'][0]['name'].split(" ")
+            second_name = credentials[2]
+            birth_date = credentials[3]
+            city_info = ' '.join(credentials[4:])
+            print(city_info)
+
+
 if __name__ == '__main__':
     load_dotenv(find_dotenv())
-    make_group_request()
+    # make_group_request()
+    get_group_result()
