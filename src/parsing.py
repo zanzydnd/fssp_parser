@@ -20,12 +20,14 @@
 
 # Записываем task_code в отдельную таблцу и прогоняем каждые 12 часов - невыполненные запросы.
 # Результат записываем в бд
+import datetime
 import os
 import time
 from pprint import pprint
 
 import requests
 from dotenv import load_dotenv, find_dotenv
+from peewee import PostgresqlDatabase
 
 from models import postgre_db, NotCheckedHuman, FSSPHuman, TaskCode
 
@@ -81,29 +83,48 @@ def get_group_result():
     task_code = TaskCode.get(TaskCode.is_executed == False)
     response = requests.get(url=API_URI + "/result",
                             params={"token": os.environ.get("API_KEY"), "task": task_code.task_code})
-    # print(response.json())
+    postgre_db.close()
+    data_source = []
+
     for result_item in response.json()['response']['result']:
-        name = result_item['query']['params']['firstname']
-        lastname = result_item['query']['params']['lastname']
-        region = result_item['query']['params']['region']
         if result_item['result']:
+            data = {}
+            data['name'] = result_item['query']['params']['firstname']
+            data['lastname'] = result_item['query']['params']['lastname']
+            data['region'] = result_item['query']['params']['region']
             credentials = result_item['result'][0]['name'].split(" ")
-            second_name = credentials[2]
-            birth_date = credentials[3]
-            city_info = ' '.join(credentials[4:])
-            exe_production = result_item['result'][0]['exe_production']
-            details = result_item['result'][0]['details']
-            subject = result_item['result'][0]['subject']
-            deparment = result_item['result'][0]['department']
-            bailiff = result_item['result'][0]['bailiff']
-            ip_end = result_item['result'][0]['ip_end']
-            human_entity = FSSPHuman(name=name, lastname=lastname, second_name=second_name, region=region,
-                                     date_of_birth=birth_date, city_info=city_info, exe_production=exe_production,
-                                     details=details, subject=subject, deparment=deparment, bailiff=bailiff,
-                                     ip_end=ip_end)
-            human_entity.save()
+            print(credentials)
+            try:
+                data['secondname'] = credentials[2]
+            except Exception as e:
+                print(e)
+                data['secondname'] = None
+            try:
+                data['date_of_birth'] = credentials[3]
+            except Exception as e:
+                print(e)
+                data['date_of_birth'] = None
+            try:
+                data['city_info'] = ' '.join(credentials[4:])
+            except Exception as e:
+                print(e)
+                data['city_info'] = None
+            data['exe_production'] = result_item['result'][0]['exe_production']
+            data['details'] = result_item['result'][0]['details']
+            data['subject'] = result_item['result'][0]['subject']
+            data['department'] = result_item['result'][0]['department']
+            data['bailiff'] = result_item['result'][0]['bailiff']
+            data['ip_end'] = result_item['result'][0]['ip_end']
+            data_source.append(data)
         else:
             continue
+
+        postgre_db.connect()
+        FSSPHuman.insert_many(data_source).execute()
+        task_code.is_executed = True
+        task_code.executed_at = datetime.datetime.now()
+        task_code.save()
+        postgre_db.close()
 
 
 if __name__ == '__main__':
