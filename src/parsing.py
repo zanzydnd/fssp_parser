@@ -87,12 +87,23 @@ def get_group_result():
         lastname = result_item['query']['params']['lastname']
         region = result_item['query']['params']['region']
         if result_item['result']:
-            print(result_item['result'][0])
             credentials = result_item['result'][0]['name'].split(" ")
             second_name = credentials[2]
             birth_date = credentials[3]
             city_info = ' '.join(credentials[4:])
-            print(city_info)
+            exe_production = result_item['result'][0]['exe_production']
+            details = result_item['result'][0]['details']
+            subject = result_item['result'][0]['subject']
+            deparment = result_item['result'][0]['department']
+            bailiff = result_item['result'][0]['bailiff']
+            ip_end = result_item['result'][0]['ip_end']
+            human_entity = FSSPHuman(name=name, lastname=lastname, second_name=second_name, region=region,
+                                     date_of_birth=birth_date, city_info=city_info, exe_production=exe_production,
+                                     details=details, subject=subject, deparment=deparment, bailiff=bailiff,
+                                     ip_end=ip_end)
+            human_entity.save()
+        else:
+            continue
 
 
 if __name__ == '__main__':
