@@ -127,7 +127,37 @@ def get_group_result():
         postgre_db.close()
 
 
+def make_single_request():
+    postgre_db.connect()
+    human = NotCheckedHuman.get(NotCheckedHuman.is_checked == False)
+    query = []
+    for i in range(1, 100):
+        map = {"token": os.environ.get("API_KEY"), "firstname": human.name, "lastname": human.lastname,
+               "region": i}
+        query.append(map)
+        print(map)
+    i = 0
+    while i < len(query):
+        
+        response = requests.get(url=API_URI + "/search/physical", params=query[i],
+                                 headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
+        try:
+            task_code = response.json()['response']['task']
+            i += 1
+            tsk = TaskCode(human=human, task_code=task_code)
+            tsk.save()
+        except Exception as e:
+            print(response.json())
+            time.sleep(100)
+            print(e)
+
+    human.is_checked = True
+    human.save()
+    postgre_db.close()
+
+
 if __name__ == '__main__':
     load_dotenv(find_dotenv())
     # make_group_request()
-    get_group_result()
+    # get_group_result()
+    make_single_request()
