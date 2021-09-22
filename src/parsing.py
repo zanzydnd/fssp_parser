@@ -96,39 +96,60 @@ def make_group_request():
                                json={"token": os.environ.get("API_KEY"), "request": first},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
 
+    response_task = response_1.json()['response']['task']
+    while True:
+        if not check_is_the_result_ready(response_task):
+            time.sleep(20)
+        else:
+            break
+
     get_group_result(response=response_1, human=human)
-    # time.sleep(150)
 
     response_2 = requests.post(url=API_URI + "/search/group",
                                json={"token": os.environ.get("API_KEY"), "request": second},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-    get_group_result(response=response_2, human=human)
+    response_task = response_1.json()['response']['task']
+    while True:
+        if not check_is_the_result_ready(response_task):
+            time.sleep(20)
+        else:
+            break
 
-    # time.sleep(150)
+    get_group_result(response=response_2, human=human)
 
     response_3 = requests.post(url=API_URI + "/search/group",
                                json={"token": os.environ.get("API_KEY"), "request": third},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-    get_group_result(response=response_3, human=human)
 
-    print(response_1.json())
-    print(response_2.json())
-    print(response_3.json())
+    response_task = response_1.json()['response']['task']
+    while True:
+        if not check_is_the_result_ready(response_task):
+            time.sleep(20)
+        else:
+            break
+    get_group_result(response=response_3, human=human)
 
     human.is_checked = True
     human.save()
     postgre_db.close()
 
 
+def check_is_the_result_ready(task):
+    response = requests.get(url=API_URI + "/status",
+                            params={"token": os.environ.get("API_KEY"), "task": task})
+    status = response.json()['response']['status']
+    if status in [0, 3]:
+        return True
+    return False
+
+
 def get_group_result(response, human):
-    # postgre_db.connect()
     print(response.json())
     response_result = requests.get(url=API_URI + "/result",
                                    params={"token": os.environ.get("API_KEY"),
                                            "task": response.json()['response']['task']})
-    # postgre_db.close()
     data_source = []
-
+    print(response_result.json())
     for result_item in response_result.json()['response']['result']:
         if result_item['result']:
             data = {}
@@ -197,8 +218,8 @@ def make_single_request():
 
 if __name__ == '__main__':
     load_dotenv(find_dotenv())
-    #preparations()
+    # preparations()
     make_group_request()
     # get_group_result()
     # make_single_request()
-    #get_humans_from_excel("5000 тест фио-дата.xlsx")
+    # get_humans_from_excel("5000 тест фио-дата.xlsx")
