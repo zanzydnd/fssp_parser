@@ -50,28 +50,37 @@ def get_humans_from_excel(filename):
     while i < len(corteges[0]):
         for j in range(1, 100):
             map = {}
-            map['lastname'], map['name'], map['secondname'] = corteges[0][i].value.slpit(" ")
+            try:
+                map['lastname'], map['name'], map['secondname'] = str.split(corteges[0][i].value.strip(), " ")
+            except ValueError as e:
+                i += 1
+                continue
             map['birth_date'] = corteges[1][i].value
             map['region'] = j
-            if not NotCheckedHuman.get(
-                    NotCheckedHuman.birth_date == map['birth_date'] and NotCheckedHuman.lastname == map[
-                        'lastname'] and NotCheckedHuman.name == map['name'] and NotCheckedHuman.secondname == map[
-                        'secondname']):
-                people.append(map)
-            else:
+            try:
+                NotCheckedHuman.get(NotCheckedHuman.birth_date == map['birth_date'] and NotCheckedHuman.lastname == map[
+                    'lastname'] and NotCheckedHuman.name == map['name'] and NotCheckedHuman.secondname == map[
+                                        'secondname'])
                 duplicate_people.append(map)
+            except Exception as e:
+                people.append(map)
         for num in REGION_NUMBERS:
             map = {}
-            map['lastname'], map['name'], map['secondname'] = corteges[0][i].value.slpit(" ")
+            try:
+                map['lastname'], map['name'], map['secondname'] = str.split(corteges[0][i].value.strip(), " ")
+            except ValueError as e:
+                i += 1
+                continue
             map['birth_date'] = corteges[1][i].value
             map['region'] = num
-            if not NotCheckedHuman.get(
-                    NotCheckedHuman.birth_date == map['birth_date'] and NotCheckedHuman.lastname == map[
-                        'lastname'] and NotCheckedHuman.name == map['name'] and NotCheckedHuman.secondname == map[
-                        'secondname']):
-                people.append(map)
-            else:
+
+            try:
+                NotCheckedHuman.get(NotCheckedHuman.birth_date == map['birth_date'] and NotCheckedHuman.lastname == map[
+                    'lastname'] and NotCheckedHuman.name == map['name'] and NotCheckedHuman.secondname == map[
+                                        'secondname'])
                 duplicate_people.append(map)
+            except Exception as e:
+                people.append(map)
         i += 1
 
     if duplicate_people:
@@ -79,6 +88,7 @@ def get_humans_from_excel(filename):
         f.write(duplicate_people)
         f.write("\n")
         f.write("Кол-во дупликатов: " + str(len(duplicate_people)))
+        f.close()
 
     with postgre_db.atomic():
         NotCheckedHuman.insert_many(people).execute()
@@ -177,4 +187,4 @@ if __name__ == '__main__':
     # make_group_request()
     # get_group_result()
     # make_single_request()
-    # get_humans_from_excel("5000 тест фио-дата.xlsx")
+    get_humans_from_excel("5000 тест фио-дата.xlsx")
