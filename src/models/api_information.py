@@ -1,13 +1,12 @@
 import datetime
 
-from peewee import TextField, DateTimeField, BooleanField, ForeignKeyField, IntegerField
-from playhouse.postgres_ext import ArrayField
+from peewee import TextField, DateTimeField, BooleanField, ForeignKeyField
 
-from .people import BaseModel
+from .people import BaseModel, NotCheckedHuman
 
 
 class TaskCode(BaseModel):
-    not_checked_humans_ids = ArrayField(IntegerField)
+    human = ForeignKeyField(NotCheckedHuman, related_name="task_codes")
     task_code = TextField()
     created_at = DateTimeField(default=datetime.datetime.now)
     is_executed = BooleanField(default=False)
