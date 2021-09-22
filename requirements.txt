@@ -2,3 +2,4 @@ requests~=2.26
 peewee~=3.14.4
 python-dotenv~=0.17.0
 psycopg2-binary~=2.8.6
+openpyxl~=3.0.7

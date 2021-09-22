@@ -23,12 +23,10 @@
 import datetime
 import os
 import time
-from pprint import pprint
-
 import requests
-from dotenv import load_dotenv, find_dotenv
-from peewee import PostgresqlDatabase
 
+from dotenv import load_dotenv, find_dotenv
+from openpyxl import load_workbook
 from models import postgre_db, NotCheckedHuman, FSSPHuman, TaskCode
 
 API_URI = "https://api-ip.fssp.gov.ru/api/v1.0"
@@ -40,41 +38,71 @@ def preparations():
         postgre_db.create_tables([NotCheckedHuman, FSSPHuman, TaskCode])
 
 
+def get_humans_from_excel(filename):
+    workbook = load_workbook(
+        filename=os.path.join(os.path.abspath(os.path.curdir), "xls_example", filename))
+    sheet = workbook.active
+    corteges = sheet["A:B"]
+    i = 0
+    people = []
+    duplicate_people = []
+    postgre_db.connect()
+    while i < len(corteges[0]):
+        for j in range(1, 100):
+            map = {}
+            map['lastname'], map['name'], map['secondname'] = corteges[0][i].value.slpit(" ")
+            map['birth_date'] = corteges[1][i].value
+            map['region'] = j
+            if not NotCheckedHuman.get(
+                    NotCheckedHuman.birth_date == map['birth_date'] and NotCheckedHuman.lastname == map[
+                        'lastname'] and NotCheckedHuman.name == map['name'] and NotCheckedHuman.secondname == map[
+                        'secondname']):
+                people.append(map)
+            else:
+                duplicate_people.append(map)
+        for num in REGION_NUMBERS:
+            map = {}
+            map['lastname'], map['name'], map['secondname'] = corteges[0][i].value.slpit(" ")
+            map['birth_date'] = corteges[1][i].value
+            map['region'] = num
+            if not NotCheckedHuman.get(
+                    NotCheckedHuman.birth_date == map['birth_date'] and NotCheckedHuman.lastname == map[
+                        'lastname'] and NotCheckedHuman.name == map['name'] and NotCheckedHuman.secondname == map[
+                        'secondname']):
+                people.append(map)
+            else:
+                duplicate_people.append(map)
+        i += 1
+
+    if duplicate_people:
+        f = open(os.path.join(os.path.abspath(os.path.curdir), "statistics", filename), "w")
+        f.write(duplicate_people)
+        f.write("\n")
+        f.write("Кол-во дупликатов: " + str(len(duplicate_people)))
+
+    with postgre_db.atomic():
+        NotCheckedHuman.insert_many(people).execute()
+
+
 def make_group_request():
     postgre_db.connect()
-    human = NotCheckedHuman.get(NotCheckedHuman.is_checked == False)
+    humans = NotCheckedHuman.select().where(NotCheckedHuman.is_checked == False).limit(50)
     query = []
-    for i in range(1, 100):
-        map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": i}}
+    query_ids = []
+    for human in humans:
+        query_ids.append(human.id)
+        map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": human.region}}
         query.append(map)
-    for num in REGION_NUMBERS:
-        map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": num}}
-        query.append(map)
-    first = query[:50]
-    second = query[50:100]
-    third = query[101:]
+
     response_1 = requests.post(url=API_URI + "/search/group",
-                               json={"token": os.environ.get("API_KEY"), "request": first},
+                               json={"token": os.environ.get("API_KEY"), "request": query},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-    time.sleep(100)
-    response_2 = requests.post(url=API_URI + "/search/group",
-                               json={"token": os.environ.get("API_KEY"), "request": second},
-                               headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-    time.sleep(200)
-    response_3 = requests.post(url=API_URI + "/search/group",
-                               json={"token": os.environ.get("API_KEY"), "request": third},
-                               headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-    print(response_1.json())
-    tsk = TaskCode(human=human, task_code=response_1.json()['response']['task'])
+
+    tsk = TaskCode(not_checked_humans_ids=query_ids, task_code=response_1.json()['response']['task'])
     tsk.save()
-    print(response_2.json())
-    tsk = TaskCode(human=human, task_code=response_2.json()['response']['task'])
-    tsk.save()
-    print(response_3.json())
-    tsk = TaskCode(human=human, task_code=response_3.json()['response']['task'])
-    tsk.save()
-    human.is_checked = True
-    human.save()
+
+    execution = NotCheckedHuman.update(validated=True).where(NotCheckedHuman.id.in_(query_ids))
+    execution.execute()
     postgre_db.close()
 
 
@@ -119,38 +147,25 @@ def get_group_result():
         else:
             continue
 
-        postgre_db.connect()
-        FSSPHuman.insert_many(data_source).execute()
-        task_code.is_executed = True
-        task_code.executed_at = datetime.datetime.now()
-        task_code.save()
-        postgre_db.close()
+    postgre_db.connect()
+    FSSPHuman.insert_many(data_source).execute()
+    task_code.is_executed = True
+    task_code.executed_at = datetime.datetime.now()
+    task_code.save()
+    postgre_db.close()
 
 
 def make_single_request():
     postgre_db.connect()
     human = NotCheckedHuman.get(NotCheckedHuman.is_checked == False)
-    query = []
-    for i in range(1, 100):
-        map = {"token": os.environ.get("API_KEY"), "firstname": human.name, "lastname": human.lastname,
-               "region": i}
-        query.append(map)
-        print(map)
-    i = 0
-    while i < len(query):
-        
-        response = requests.get(url=API_URI + "/search/physical", params=query[i],
-                                 headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-        try:
-            task_code = response.json()['response']['task']
-            i += 1
-            tsk = TaskCode(human=human, task_code=task_code)
-            tsk.save()
-        except Exception as e:
-            print(response.json())
-            time.sleep(100)
-            print(e)
+    map = {"token": os.environ.get("API_KEY"), "firstname": human.name, "lastname": human.lastname,
+           "region": human.region}
+    response = requests.get(url=API_URI + "/search/physical", params=map,
+                            headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
 
+    task_code = response.json()['response']['task']
+    tsk = TaskCode(not_checked_humans_ids=[human.id], task_code=task_code)
+    tsk.save()
     human.is_checked = True
     human.save()
     postgre_db.close()
@@ -158,6 +173,8 @@ def make_single_request():
 
 if __name__ == '__main__':
     load_dotenv(find_dotenv())
+    # preparations()
     # make_group_request()
     # get_group_result()
-    make_single_request()
+    # make_single_request()
+    # get_humans_from_excel("5000 тест фио-дата.xlsx")

@@ -23,6 +23,7 @@ class NotCheckedHuman(BaseModel):
     lastname = CharField(max_length=100, null=False)
     secondname = CharField(max_length=100, null=True)
     region = IntegerField(null=True)
+    birth_date = DateTimeField(null=True)
     is_checked = BooleanField(default=False, null=False)
 
 
