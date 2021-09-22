@@ -97,6 +97,7 @@ def make_group_request():
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
 
     response_task = response_1.json()['response']['task']
+
     while True:
         if not check_is_the_result_ready(response_task):
             time.sleep(20)
@@ -108,7 +109,7 @@ def make_group_request():
     response_2 = requests.post(url=API_URI + "/search/group",
                                json={"token": os.environ.get("API_KEY"), "request": second},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-    response_task = response_1.json()['response']['task']
+    response_task = response_2.json()['response']['task']
     while True:
         if not check_is_the_result_ready(response_task):
             time.sleep(20)
@@ -121,7 +122,7 @@ def make_group_request():
                                json={"token": os.environ.get("API_KEY"), "request": third},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
 
-    response_task = response_1.json()['response']['task']
+    response_task = response_3.json()['response']['task']
     while True:
         if not check_is_the_result_ready(response_task):
             time.sleep(20)
@@ -135,21 +136,24 @@ def make_group_request():
 
 
 def check_is_the_result_ready(task):
+    print("task n:" , task)
     response = requests.get(url=API_URI + "/status",
                             params={"token": os.environ.get("API_KEY"), "task": task})
     status = response.json()['response']['status']
+    print("print n status: ", status)
     if status in [0, 3]:
         return True
     return False
 
 
+# TODO: проверить запись в текст.
 def get_group_result(response, human):
-    print(response.json())
+    print("from response : ", response.json())
     response_result = requests.get(url=API_URI + "/result",
                                    params={"token": os.environ.get("API_KEY"),
                                            "task": response.json()['response']['task']})
     data_source = []
-    print(response_result.json())
+    print("group resukt: ", response_result.json())
     for result_item in response_result.json()['response']['result']:
         if result_item['result']:
             data = {}
