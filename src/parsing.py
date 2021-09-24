@@ -26,54 +26,11 @@ import time
 import requests
 
 from dotenv import load_dotenv, find_dotenv
-from openpyxl import load_workbook
-from models import postgre_db, NotCheckedHuman, FSSPHuman, TaskCode
+from models import postgre_db, NotCheckedHuman, FSSPHuman, TaskCode, Statistic
 
 API_URI = "https://api-ip.fssp.gov.ru/api/v1.0"
 REGION_NUMBERS = [102, 116, 125, 138, 150, 154, 159, 161, 163, 173, 174, 118, 121, 93]  # + 1-99
-
-
-def preparations():
-    with postgre_db:
-        postgre_db.create_tables([NotCheckedHuman, FSSPHuman, TaskCode])
-
-
-def get_humans_from_excel(filename):
-    workbook = load_workbook(
-        filename=os.path.join(os.path.abspath(os.path.curdir), "xls_example", filename))
-    sheet = workbook.active
-    corteges = sheet["A:B"]
-    i = 0
-    people = []
-    duplicate_people = []
-    postgre_db.connect()
-    while i < len(corteges[0]):
-        map = {}
-        try:
-            map['lastname'], map['name'], map['secondname'] = str.split(corteges[0][i].value.strip(), " ")
-        except ValueError as e:
-            i += 1
-            continue
-        map['birth_date'] = corteges[1][i].value
-        try:
-            NotCheckedHuman.get(NotCheckedHuman.birth_date == map['birth_date'] and NotCheckedHuman.lastname == map[
-                'lastname'] and NotCheckedHuman.name == map['name'] and NotCheckedHuman.secondname == map[
-                                    'secondname'])
-            duplicate_people.append(map)
-        except Exception as e:
-            people.append(map)
-        i += 1
-
-    if duplicate_people:
-        f = open(os.path.join(os.path.abspath(os.path.curdir), "statistics", "duplicates", filename[:-4] + "txt"), "w")
-        f.write(str(duplicate_people))
-        f.write("\n")
-        f.write("Кол-во дупликатов: " + str(len(duplicate_people)))
-        f.close()
-
-    with postgre_db.atomic():
-        NotCheckedHuman.insert_many(people).execute()
-
+load_dotenv(find_dotenv())
 
 def make_group_request():
     postgre_db.connect()
@@ -136,7 +93,7 @@ def make_group_request():
 
 
 def check_is_the_result_ready(task):
-    print("task n:" , task)
+    print("task n: ", task)
     response = requests.get(url=API_URI + "/status",
                             params={"token": os.environ.get("API_KEY"), "task": task})
     status = response.json()['response']['status']
@@ -146,7 +103,6 @@ def check_is_the_result_ready(task):
     return False
 
 
-# TODO: проверить запись в текст.
 def get_group_result(response, human):
     print("from response : ", response.json())
     response_result = requests.get(url=API_URI + "/result",
@@ -192,15 +148,9 @@ def get_group_result(response, human):
                    executed_at=datetime.datetime.now())
     tsk.save()
 
-    f = open(os.path.join(os.path.abspath(os.path.curdir), "statistics", "new_info",
-                          response.json()['response']['task'] + ".txt"), "w")
-    f.write(str(data_source))
-    f.write("\n")
-    f.write("Кол-во новых записей: " + str(len(data_source)))
-    f.close()
-
+    f = Statistic(task=tsk, num_of_new_records=len(data_source))
+    f.save()
     FSSPHuman.insert_many(data_source).execute()
-    # postgre_db.close()
 
 
 # TODO: переделать
@@ -220,10 +170,10 @@ def make_single_request():
     postgre_db.close()
 
 
-if __name__ == '__main__':
-    load_dotenv(find_dotenv())
-    # preparations()
+count = 0
+while count < 4996:
     make_group_request()
-    # get_group_result()
-    # make_single_request()
-    # get_humans_from_excel("5000 тест фио-дата.xlsx")
+    count += 3
+    if count == 4995:
+        count = 0
+        time.sleep(86400)
