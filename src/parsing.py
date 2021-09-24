@@ -29,8 +29,9 @@ from dotenv import load_dotenv, find_dotenv
 from models import postgre_db, NotCheckedHuman, FSSPHuman, TaskCode, Statistic
 
 API_URI = "https://api-ip.fssp.gov.ru/api/v1.0"
-REGION_NUMBERS = [102, 116, 125, 138, 150, 154, 159, 161, 163, 173, 174, 118, 121, 93]  # + 1-99
+REGION_NUMBERS = [102, 116, 125, 138, 150, 154, 159, 161, 163, 173, 174, 118, 121, 93, 113, 123, 124]  # + 1-99
 load_dotenv(find_dotenv())
+
 
 def make_group_request():
     postgre_db.connect()
@@ -113,25 +114,10 @@ def get_group_result(response, human):
     for result_item in response_result.json()['response']['result']:
         if result_item['result']:
             data = {}
-            data['name'] = result_item['query']['params']['firstname']
-            data['lastname'] = result_item['query']['params']['lastname']
+            #data['name'] = result_item['query']['params']['firstname']
+            #data['lastname'] = result_item['query']['params']['lastname']
             data['region'] = result_item['query']['params']['region']
-            credentials = result_item['result'][0]['name'].split(" ")
-            try:
-                data['secondname'] = credentials[2]
-            except Exception as e:
-                print(e)
-                data['secondname'] = None
-            try:
-                data['date_of_birth'] = credentials[3]
-            except Exception as e:
-                print(e)
-                data['date_of_birth'] = None
-            try:
-                data['city_info'] = ' '.join(credentials[4:])
-            except Exception as e:
-                print(e)
-                data['city_info'] = None
+            data['name'] = result_item['query']['params']['region']
             data['exe_production'] = result_item['result'][0]['exe_production']
             data['details'] = result_item['result'][0]['details']
             data['subject'] = result_item['result'][0]['subject']

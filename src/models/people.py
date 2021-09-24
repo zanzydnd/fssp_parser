@@ -29,8 +29,8 @@ class NotCheckedHuman(BaseModel):
 
 class FSSPHuman(BaseModel):
     name = CharField(max_length=100, null=False)
-    lastname = CharField(max_length=100, null=False)
-    secondname = CharField(max_length=100, null=True)
+    #lastname = CharField(max_length=100, null=False)
+    #secondname = CharField(max_length=100, null=True)
     date_of_birth = DateTimeField(null=True)
     city_info = TextField(null=True)
     created_at = DateTimeField(default=datetime.datetime.now)
