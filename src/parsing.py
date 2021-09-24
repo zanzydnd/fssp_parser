@@ -22,6 +22,7 @@
 # Результат записываем в бд
 import datetime
 import os
+import sys
 import time
 import requests
 
@@ -31,29 +32,29 @@ from models import postgre_db, NotCheckedHuman, FSSPHuman, TaskCode, Statistic
 API_URI = "https://api-ip.fssp.gov.ru/api/v1.0"
 REGION_NUMBERS = [102, 116, 125, 138, 150, 154, 159, 161, 163, 173, 174, 118, 121, 93, 113, 123, 124]  # + 1-99
 load_dotenv(find_dotenv())
-
+API_KEY = sys.argv[1]
 
 def make_group_request():
     postgre_db.connect()
     try:
-        human = NotCheckedHuman.get(NotCheckedHuman.is_checked == False)
+        human = NotCheckedHuman.get(NotCheckedHuman.is_checked == False and NotCheckedHuman.being_check == False)
     except Exception as e:
         return
     query = []
-    for i in range(1, 100):
+    human.being_check = True
+    human.save()
+    for i in range(1, 93):
         map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": i}}
         query.append(map)
-    for num in REGION_NUMBERS:
-        map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": num}}
-        query.append(map)
     first = query[:50]
-    second = query[50:100]
-    third = query[100:]
+    second = query[50:]
 
+    #os.environ['https_proxy'] = sys.argv[2] #"e_blinova_tiwo_ru:9cb089306d@213.166.91.67:30011"
     response_1 = requests.post(url=API_URI + "/search/group",
-                               json={"token": os.environ.get("API_KEY"), "request": first},
+                               json={"token": API_KEY, "request": first},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
 
+    print(response_1.json())
     response_task = response_1.json()['response']['task']
 
     while True:
@@ -65,9 +66,10 @@ def make_group_request():
     get_group_result(response=response_1, human=human)
 
     response_2 = requests.post(url=API_URI + "/search/group",
-                               json={"token": os.environ.get("API_KEY"), "request": second},
+                               json={"token": API_KEY, "request": second},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
     response_task = response_2.json()['response']['task']
+
     while True:
         if not check_is_the_result_ready(response_task):
             time.sleep(20)
@@ -75,18 +77,6 @@ def make_group_request():
             break
 
     get_group_result(response=response_2, human=human)
-
-    response_3 = requests.post(url=API_URI + "/search/group",
-                               json={"token": os.environ.get("API_KEY"), "request": third},
-                               headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-
-    response_task = response_3.json()['response']['task']
-    while True:
-        if not check_is_the_result_ready(response_task):
-            time.sleep(20)
-        else:
-            break
-    get_group_result(response=response_3, human=human)
 
     human.is_checked = True
     human.save()
@@ -96,7 +86,7 @@ def make_group_request():
 def check_is_the_result_ready(task):
     print("task n: ", task)
     response = requests.get(url=API_URI + "/status",
-                            params={"token": os.environ.get("API_KEY"), "task": task})
+                            params={"token": API_KEY, "task": task})
     status = response.json()['response']['status']
     print("print n status: ", status)
     if status in [0, 3]:
@@ -107,15 +97,13 @@ def check_is_the_result_ready(task):
 def get_group_result(response, human):
     print("from response : ", response.json())
     response_result = requests.get(url=API_URI + "/result",
-                                   params={"token": os.environ.get("API_KEY"),
+                                   params={"token": API_KEY,
                                            "task": response.json()['response']['task']})
     data_source = []
     print("group resukt: ", response_result.json())
     for result_item in response_result.json()['response']['result']:
         if result_item['result']:
             data = {}
-            #data['name'] = result_item['query']['params']['firstname']
-            #data['lastname'] = result_item['query']['params']['lastname']
             data['region'] = result_item['query']['params']['region']
             data['name'] = result_item['query']['params']['region']
             data['exe_production'] = result_item['result'][0]['exe_production']
@@ -128,7 +116,6 @@ def get_group_result(response, human):
         else:
             continue
 
-    # postgre_db.connect()
 
     tsk = TaskCode(human=human, task_code=response.json()['response']['task'], is_executed=True,
                    executed_at=datetime.datetime.now())
