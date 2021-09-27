@@ -34,12 +34,30 @@ REGION_NUMBERS = [102, 116, 125, 138, 150, 154, 159, 161, 163, 173, 174, 118, 12
 load_dotenv(find_dotenv())
 API_KEY = sys.argv[1]
 
+
+def check_is_there_new_human_to_check():
+    try:
+        human = NotCheckedHuman.get(
+            NotCheckedHuman.is_checked == False and NotCheckedHuman.being_check == False)
+        return human
+    except Exception as e:
+        f = open(os.path.join(os.path.abspath(os.path.curdir), "log_file.txt"), "w",
+                 encoding="utf-8")
+        f.write(str(datetime.date.today()) + " - " + "Закончились люди в бд.")
+        f.close()
+        return "no_humans"
+
+
 def make_group_request():
     postgre_db.connect()
-    try:
-        human = NotCheckedHuman.get(NotCheckedHuman.is_checked == False and NotCheckedHuman.being_check == False)
-    except Exception as e:
-        return
+
+    while True:
+        human_or_not = check_is_there_new_human_to_check()
+        if human_or_not == "no_humans":
+            time.sleep(20)
+        else:
+            human = human_or_not
+            break
     query = []
     human.being_check = True
     human.save()
@@ -49,7 +67,7 @@ def make_group_request():
     first = query[:50]
     second = query[50:]
 
-    #os.environ['https_proxy'] = sys.argv[2] #"e_blinova_tiwo_ru:9cb089306d@213.166.91.67:30011"
+    # os.environ['https_proxy'] = sys.argv[2] #"e_blinova_tiwo_ru:9cb089306d@213.166.91.67:30011"
     response_1 = requests.post(url=API_URI + "/search/group",
                                json={"token": API_KEY, "request": first},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
@@ -81,6 +99,7 @@ def make_group_request():
     human.is_checked = True
     human.save()
     postgre_db.close()
+    return "Done"
 
 
 def check_is_the_result_ready(task):
@@ -116,7 +135,6 @@ def get_group_result(response, human):
         else:
             continue
 
-
     tsk = TaskCode(human=human, task_code=response.json()['response']['task'], is_executed=True,
                    executed_at=datetime.datetime.now())
     tsk.save()
@@ -145,7 +163,7 @@ def make_single_request():
 
 count = 0
 while count < 4996:
-    make_group_request()
+    return_string = make_group_request()
     count += 3
     if count == 4995:
         count = 0
