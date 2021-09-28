@@ -33,6 +33,13 @@ API_URI = "https://api-ip.fssp.gov.ru/api/v1.0"
 REGION_NUMBERS = [102, 116, 125, 138, 150, 154, 159, 161, 163, 173, 174, 118, 121, 93, 113, 123, 124]  # + 1-99
 load_dotenv(find_dotenv())
 API_KEY = sys.argv[1]
+MONITORING_SERVICE_URL = "http://176.57.217.47/api/parser/report/"
+
+
+def send_status_to_monitoring_service(status, description):
+    body = {"token": os.environ.get("CHECK_PARSER_TOKEN"), "status": status, "description": description,
+            "name": os.environ.get("PARSER_NAME")}
+    response_from_check_service = requests.post(url=MONITORING_SERVICE_URL + os.environ.get("PARSER_NAME"), json=body)
 
 
 def check_is_there_new_human_to_check():
@@ -45,6 +52,7 @@ def check_is_there_new_human_to_check():
                  encoding="utf-8")
         f.write(str(datetime.date.today()) + " - " + "Закончились люди в бд.")
         f.close()
+        send_status_to_monitoring_service("not_critical", "Нет новых людей в базе.")
         return "no_humans"
 
 
@@ -162,9 +170,16 @@ def make_single_request():
 
 
 count = 0
+start = datetime.datetime.now()
 while count < 4996:
     return_string = make_group_request()
-    count += 3
+    now = datetime.datetime.now()
+    if (now - start).days >= 1:
+        count = 0
+        start = datetime.datetime.now()
+        send_status_to_monitoring_service("ok", "Ok")
+    count += 2
     if count == 4995:
         count = 0
+        send_status_to_monitoring_service("ok", "Ok")
         time.sleep(86400)
