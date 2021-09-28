@@ -124,7 +124,7 @@ def get_group_result(response, human):
         if result_item['result']:
             data = {}
             data['region'] = result_item['query']['params']['region']
-            data['name'] = result_item['query']['params']['region']
+            data['name'] = result_item['query']['params']['name']
             data['exe_production'] = result_item['result'][0]['exe_production']
             data['details'] = result_item['result'][0]['details']
             data['subject'] = result_item['result'][0]['subject']
