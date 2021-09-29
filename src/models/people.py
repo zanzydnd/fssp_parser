@@ -29,7 +29,7 @@ class NotCheckedHuman(BaseModel):
 
 
 class FSSPHuman(BaseModel):
-    name = CharField(max_length=100, null=False)
+    name = TextField(null=False)
     #lastname = CharField(max_length=100, null=False)
     #secondname = CharField(max_length=100, null=True)
     #date_of_birth = DateTimeField(null=True)

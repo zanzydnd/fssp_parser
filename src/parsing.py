@@ -130,16 +130,17 @@ def get_group_result(response, human):
     print("group resukt: ", response_result.json())
     for result_item in response_result.json()['response']['result']:
         if result_item['result']:
-            data = {}
-            data['region'] = result_item['query']['params']['region']
-            data['name'] = result_item['query']['params']['name']
-            data['exe_production'] = result_item['result'][0]['exe_production']
-            data['details'] = result_item['result'][0]['details']
-            data['subject'] = result_item['result'][0]['subject']
-            data['department'] = result_item['result'][0]['department']
-            data['bailiff'] = result_item['result'][0]['bailiff']
-            data['ip_end'] = result_item['result'][0]['ip_end']
-            data_source.append(data)
+            for record in result_item['result']:
+                data = {}
+                data['region'] = result_item['query']['params']['region']
+                data['name'] = record['name']
+                data['exe_production'] = record['exe_production']
+                data['details'] = record['details']
+                data['subject'] = record['subject']
+                data['department'] = record['department']
+                data['bailiff'] = record['bailiff']
+                data['ip_end'] = record['ip_end']
+                data_source.append(data)
         else:
             continue
 
