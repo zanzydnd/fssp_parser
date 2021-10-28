@@ -128,6 +128,8 @@ def get_group_result(response, human):
                                            "task": response.json()['response']['task']})
     data_source = []
     print("group resukt: ", response_result.json())
+    if response_result.json().get('status') == 'error':
+        return
     for result_item in response_result.json()['response']['result']:
         if result_item['result']:
             for record in result_item['result']:

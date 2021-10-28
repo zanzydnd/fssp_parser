@@ -2,7 +2,7 @@ import os
 import sys
 
 from dotenv import load_dotenv, find_dotenv
-from models import postgre_db, NotCheckedHuman, FSSPHuman, TaskCode, Statistic
+from models import postgre_db, NotCheckedHuman
 from openpyxl import load_workbook
 
 load_dotenv(find_dotenv())
