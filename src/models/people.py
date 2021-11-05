@@ -22,7 +22,6 @@ class NotCheckedHuman(BaseModel):
     name = CharField(max_length=100, null=False)
     lastname = CharField(max_length=100, null=False)
     secondname = CharField(max_length=100, null=True)
-    #region = IntegerField(null=True)
     birth_date = DateTimeField(null=True)
     is_checked = BooleanField(default=False, null=False)
     being_check = BooleanField(default=False,null=False)
@@ -30,10 +29,6 @@ class NotCheckedHuman(BaseModel):
 
 class FSSPHuman(BaseModel):
     name = TextField(null=False)
-    #lastname = CharField(max_length=100, null=False)
-    #secondname = CharField(max_length=100, null=True)
-    #date_of_birth = DateTimeField(null=True)
-    #city_info = TextField(null=True)
     created_at = DateTimeField(default=datetime.datetime.now)
     region = IntegerField(null=True)
     exe_production = TextField(null=True)

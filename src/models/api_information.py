@@ -17,3 +17,4 @@ class Statistic(BaseModel):
     num_of_new_records = IntegerField()
     task = ForeignKeyField(TaskCode, related_name="statistics")
     data = DateTimeField(default=datetime.datetime.now)
+

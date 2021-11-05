@@ -75,7 +75,6 @@ def make_group_request():
     first = query[:50]
     second = query[50:]
 
-    # os.environ['https_proxy'] = sys.argv[2] #"e_blinova_tiwo_ru:9cb089306d@213.166.91.67:30011"
     response_1 = requests.post(url=API_URI + "/search/group",
                                json={"token": API_KEY, "request": first},
                                headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
