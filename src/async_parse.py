@@ -135,4 +135,4 @@ for key in keys:
     i += 1
     
 with Pool(len(keys)) as p:
-    p.map()
+    p.map(make_group_request, data)

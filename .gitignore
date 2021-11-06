@@ -5,8 +5,8 @@ __pycache__/
 
 .idea
 keys
-/src/bio.py
-/src/bio2.py
+
+
 # C extensions
 *.so
 
