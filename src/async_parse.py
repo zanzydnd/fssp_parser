@@ -20,8 +20,8 @@ def make_group_request(API_KEY, humans):
         for human in humans:
             query = []
 
-            #human.being_check = True
-            #human.save()
+            # human.being_check = True
+            # human.save()
 
             for i in range(1, 93):
                 map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": i}}
@@ -31,13 +31,14 @@ def make_group_request(API_KEY, humans):
 
             response_1 = requests.post(url=API_URI + "/search/group",
                                        json={"token": API_KEY, "request": first},
-                                       headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
+                                       headers={"User-Agent": "PostmanRuntime/7.28.4",
+                                                "Content-Type": "application/json"})
 
             print(response_1.json())
             response_task = response_1.json()['response']['task']
 
             while True:
-                if not check_is_the_result_ready(response_task):
+                if not check_is_the_result_ready(response_task, API_KEY):
                     time.sleep(20)
                 else:
                     break
@@ -46,11 +47,12 @@ def make_group_request(API_KEY, humans):
 
             response_2 = requests.post(url=API_URI + "/search/group",
                                        json={"token": API_KEY, "request": second},
-                                       headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
+                                       headers={"User-Agent": "PostmanRuntime/7.28.4",
+                                                "Content-Type": "application/json"})
             response_task = response_2.json()['response']['task']
 
             while True:
-                if not check_is_the_result_ready(response_task, API_KEY=API_KEY):
+                if not check_is_the_result_ready(response_task, API_KEY):
                     time.sleep(20)
                 else:
                     break
@@ -116,23 +118,29 @@ def get_group_result(response, human, API_KEY):
     FSSPHuman.insert_many(data_source).execute()
 
 
-postgre_db.connect()
-keys = []
-with open(os.path.join(os.path.abspath(os.path.curdir), "keys")) as f:
-    for line in f:
-        keys.append(line)
+def bridge(corteg):
+    make_group_request(corteg[0],corteg[1])
 
-data = []
+if __name__ == '__main__':
+    postgre_db.connect()
+    keys = []
+    with open(os.path.join(os.path.abspath(os.path.curdir), "keys")) as f:
+        for line in f:
+            keys.append(line)
 
-butch_size = int(len(
-    NotCheckedHuman.select().where(NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)) / len(
-    keys) + 0.5)
+    data = []
 
-hum = NotCheckedHuman.select().where(NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)
-i = 0
-for key in keys:
-    data.append((key, hum[i * butch_size: i * butch_size + butch_size]))
-    i += 1
-    
-with Pool(len(keys)) as p:
-    p.map(make_group_request, data)
+    butch_size = int(len(
+        NotCheckedHuman.select().where(
+            NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)) / len(
+        keys) + 0.5)
+
+    hum = NotCheckedHuman.select().where(NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)
+    i = 0
+    for key in keys:
+        data.append((key, hum[i * butch_size: i * butch_size + butch_size]))
+        i += 1
+
+    postgre_db.close()
+    with Pool(len(keys)) as p:
+        p.map(bridge, data)
