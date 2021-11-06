@@ -15,49 +15,51 @@ MONITORING_SERVICE_URL = "http://176.57.217.47/api/parser/report/"
 
 
 def make_group_request(API_KEY, humans):
-    postgre_db.connect()
+    while True:
+        postgre_db.connect()
+        for human in humans:
+            query = []
 
-    for human in humans:
-        query = []
-        human.being_check = True
-        human.save()
-        for i in range(1, 93):
-            map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": i}}
-            query.append(map)
-        first = query[:50]
-        second = query[50:]
+            #human.being_check = True
+            #human.save()
 
-        response_1 = requests.post(url=API_URI + "/search/group",
-                                   json={"token": API_KEY, "request": first},
-                                   headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
+            for i in range(1, 93):
+                map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": i}}
+                query.append(map)
+            first = query[:50]
+            second = query[50:]
 
-        print(response_1.json())
-        response_task = response_1.json()['response']['task']
+            response_1 = requests.post(url=API_URI + "/search/group",
+                                       json={"token": API_KEY, "request": first},
+                                       headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
 
-        while True:
-            if not check_is_the_result_ready(response_task):
-                time.sleep(20)
-            else:
-                break
+            print(response_1.json())
+            response_task = response_1.json()['response']['task']
 
-        get_group_result(response=response_1, human=human)
+            while True:
+                if not check_is_the_result_ready(response_task):
+                    time.sleep(20)
+                else:
+                    break
 
-        response_2 = requests.post(url=API_URI + "/search/group",
-                                   json={"token": API_KEY, "request": second},
-                                   headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-        response_task = response_2.json()['response']['task']
+            get_group_result(response=response_1, human=human)
 
-        while True:
-            if not check_is_the_result_ready(response_task, API_KEY=API_KEY):
-                time.sleep(20)
-            else:
-                break
+            response_2 = requests.post(url=API_URI + "/search/group",
+                                       json={"token": API_KEY, "request": second},
+                                       headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
+            response_task = response_2.json()['response']['task']
 
-        get_group_result(response=response_2, human=human, API_KEY=API_KEY)
+            while True:
+                if not check_is_the_result_ready(response_task, API_KEY=API_KEY):
+                    time.sleep(20)
+                else:
+                    break
 
-        human.is_checked = True
-        human.save()
-        postgre_db.close()
+            get_group_result(response=response_2, human=human, API_KEY=API_KEY)
+
+            human.is_checked = True
+            human.save()
+            postgre_db.close()
 
 
 def check_is_the_result_ready(task, API_KEY):
@@ -80,9 +82,18 @@ def get_group_result(response, human, API_KEY):
     print("group resukt: ", response_result.json())
     if response_result.json().get('status') == 'error':
         return
+
     for result_item in response_result.json()['response']['result']:
         if result_item['result']:
             for record in result_item['result']:
+                if FSSPHuman.select().where(FSSPHuman.name == record['name'] & FSSPHuman.region == record['region']
+                                            & FSSPHuman.exe_production == record['exe_production']
+                                            & FSSPHuman.details == record['details']
+                                            & FSSPHuman.subject == record['subject']
+                                            & FSSPHuman.department == record['department']
+                                            & FSSPHuman.bailiff == record['bailiff']
+                                            & FSSPHuman.ip_end == record['ip_end']):
+                    continue
                 data = {}
                 data['region'] = result_item['query']['params']['region']
                 data['name'] = record['name']
@@ -105,6 +116,7 @@ def get_group_result(response, human, API_KEY):
     FSSPHuman.insert_many(data_source).execute()
 
 
+postgre_db.connect()
 keys = []
 with open(os.path.join(os.path.abspath(os.path.curdir), "keys")) as f:
     for line in f:
@@ -114,8 +126,13 @@ data = []
 
 butch_size = int(len(
     NotCheckedHuman.select().where(NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)) / len(
-    keys))
-for key in keys:
+    keys) + 0.5)
 
+hum = NotCheckedHuman.select().where(NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)
+i = 0
+for key in keys:
+    data.append((key, hum[i * butch_size: i * butch_size + butch_size]))
+    i += 1
+    
 with Pool(len(keys)) as p:
     p.map()
