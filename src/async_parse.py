@@ -68,7 +68,10 @@ def check_is_the_result_ready(task, API_KEY):
     print("task n: ", task)
     response = requests.get(url=API_URI + "/status",
                             params={"token": API_KEY, "task": task})
-    status = response.json()['response']['status']
+    try:
+        status = response.json()['response']['status']
+    except Exception as e:
+        return False
     print("print n status: ", status)
     if status in [0, 3]:
         return True
