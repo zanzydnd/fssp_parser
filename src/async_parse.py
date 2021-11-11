@@ -14,7 +14,9 @@ load_dotenv(find_dotenv())
 MONITORING_SERVICE_URL = "http://176.57.217.47/api/parser/report/"
 
 
-def make_group_request(API_KEY, humans):
+def make_group_request(API_KEY, humans, proxy):
+    prx = {"https": proxy}
+
     while True:
         postgre_db.connect()
         for human in humans:
@@ -32,42 +34,42 @@ def make_group_request(API_KEY, humans):
             response_1 = requests.post(url=API_URI + "/search/group",
                                        json={"token": API_KEY, "request": first},
                                        headers={"User-Agent": "PostmanRuntime/7.28.4",
-                                                "Content-Type": "application/json"})
+                                                "Content-Type": "application/json"}, proxies=prx)
 
             print(response_1.json())
             response_task = response_1.json()['response']['task']
 
             while True:
-                if not check_is_the_result_ready(response_task, API_KEY):
+                if not check_is_the_result_ready(response_task, API_KEY, prx):
                     time.sleep(20)
                 else:
                     break
 
-            get_group_result(response=response_1, human=human)
+            get_group_result(response=response_1, human=human,prx=prx)
 
             response_2 = requests.post(url=API_URI + "/search/group",
                                        json={"token": API_KEY, "request": second},
                                        headers={"User-Agent": "PostmanRuntime/7.28.4",
-                                                "Content-Type": "application/json"})
+                                                "Content-Type": "application/json"},proxies=prx)
             response_task = response_2.json()['response']['task']
 
             while True:
-                if not check_is_the_result_ready(response_task, API_KEY):
+                if not check_is_the_result_ready(response_task, API_KEY, prx):
                     time.sleep(20)
                 else:
                     break
 
-            get_group_result(response=response_2, human=human, API_KEY=API_KEY)
+            get_group_result(response=response_2, human=human, API_KEY=API_KEY,prx=prx)
 
             human.is_checked = True
             human.save()
             postgre_db.close()
 
 
-def check_is_the_result_ready(task, API_KEY):
+def check_is_the_result_ready(task, API_KEY, prx):
     print("task n: ", task)
     response = requests.get(url=API_URI + "/status",
-                            params={"token": API_KEY, "task": task})
+                            params={"token": API_KEY, "task": task}, proxies=prx)
     try:
         status = response.json()['response']['status']
     except Exception as e:
@@ -78,11 +80,11 @@ def check_is_the_result_ready(task, API_KEY):
     return False
 
 
-def get_group_result(response, human, API_KEY):
+def get_group_result(response, human, API_KEY, prx):
     print("from response : ", response.json())
     response_result = requests.get(url=API_URI + "/result",
                                    params={"token": API_KEY,
-                                           "task": response.json()['response']['task']})
+                                           "task": response.json()['response']['task']}, proxies=prx)
     data_source = []
     print("group resukt: ", response_result.json())
     if response_result.json().get('status') == 'error':
@@ -122,7 +124,7 @@ def get_group_result(response, human, API_KEY):
 
 
 def bridge(corteg):
-    make_group_request(corteg[0],corteg[1])
+    make_group_request(corteg[0],corteg[1], corteg[3])
 
 if __name__ == '__main__':
     postgre_db.connect()
@@ -140,8 +142,15 @@ if __name__ == '__main__':
 
     hum = NotCheckedHuman.select().where(NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)
     i = 0
+
+
+    proxs = []
+    with open(os.path.join(os.path.abspath(os.path.curdir), "proxy.txt")) as f:
+        for line in f:
+            proxs.append(line)
+
     for key in keys:
-        data.append((key, hum[i * butch_size: i * butch_size + butch_size]))
+        data.append((key, hum[i * butch_size: i * butch_size + butch_size],proxs[i]))
         i += 1
 
     postgre_db.close()
