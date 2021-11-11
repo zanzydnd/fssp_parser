@@ -124,7 +124,7 @@ def get_group_result(response, human, API_KEY, prx):
 
 
 def bridge(corteg):
-    make_group_request(corteg[0],corteg[1], corteg[3])
+    make_group_request(corteg[0],corteg[1], corteg[2])
 
 if __name__ == '__main__':
     postgre_db.connect()
