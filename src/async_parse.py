@@ -45,12 +45,12 @@ def make_group_request(API_KEY, humans, proxy):
                 else:
                     break
 
-            get_group_result(response=response_1, human=human,prx=prx)
+            get_group_result(response=response_1, human=human, prx=prx)
 
             response_2 = requests.post(url=API_URI + "/search/group",
                                        json={"token": API_KEY, "request": second},
                                        headers={"User-Agent": "PostmanRuntime/7.28.4",
-                                                "Content-Type": "application/json"},proxies=prx)
+                                                "Content-Type": "application/json"}, proxies=prx)
             response_task = response_2.json()['response']['task']
 
             while True:
@@ -59,7 +59,7 @@ def make_group_request(API_KEY, humans, proxy):
                 else:
                     break
 
-            get_group_result(response=response_2, human=human, API_KEY=API_KEY,prx=prx)
+            get_group_result(response=response_2, human=human, API_KEY=API_KEY, prx=prx)
 
             human.is_checked = True
             human.save()
@@ -124,7 +124,8 @@ def get_group_result(response, human, API_KEY, prx):
 
 
 def bridge(corteg):
-    make_group_request(corteg[0],corteg[1], corteg[2])
+    make_group_request(corteg[0], corteg[1], corteg[2])
+
 
 if __name__ == '__main__':
     postgre_db.connect()
@@ -143,14 +144,13 @@ if __name__ == '__main__':
     hum = NotCheckedHuman.select().where(NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)
     i = 0
 
-
     proxs = []
     with open(os.path.join(os.path.abspath(os.path.curdir), "proxy.txt")) as f:
         for line in f:
             proxs.append(line)
 
     for key in keys:
-        data.append((key, hum[i * butch_size: i * butch_size + butch_size],proxs[i]))
+        data.append((key, hum[i * butch_size: i * butch_size + butch_size], "https://" + proxs[i]))
         i += 1
 
     postgre_db.close()
