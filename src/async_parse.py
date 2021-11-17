@@ -37,32 +37,35 @@ def make_group_request(API_KEY, humans, proxy):
                                                 "Content-Type": "application/json"}, proxies=prx)
 
             print(response_1.json())
-            response_task = response_1.json()['response']['task']
+            try:
+                response_task = response_1.json()['response']['task']
 
-            while True:
-                if not check_is_the_result_ready(response_task, API_KEY, prx):
-                    time.sleep(20)
-                else:
-                    break
+                while True:
+                    if not check_is_the_result_ready(response_task, API_KEY, prx):
+                        time.sleep(20)
+                    else:
+                        break
 
-            get_group_result(response=response_1, human=human, prx=prx)
+                get_group_result(response=response_1, human=human, prx=prx)
 
-            response_2 = requests.post(url=API_URI + "/search/group",
-                                       json={"token": API_KEY, "request": second},
-                                       headers={"User-Agent": "PostmanRuntime/7.28.4",
-                                                "Content-Type": "application/json"}, proxies=prx)
-            response_task = response_2.json()['response']['task']
+                response_2 = requests.post(url=API_URI + "/search/group",
+                                           json={"token": API_KEY, "request": second},
+                                           headers={"User-Agent": "PostmanRuntime/7.28.4",
+                                                    "Content-Type": "application/json"}, proxies=prx)
+                response_task = response_2.json()['response']['task']
 
-            while True:
-                if not check_is_the_result_ready(response_task, API_KEY, prx):
-                    time.sleep(20)
-                else:
-                    break
+                while True:
+                    if not check_is_the_result_ready(response_task, API_KEY, prx):
+                        time.sleep(20)
+                    else:
+                        break
 
-            get_group_result(response=response_2, human=human, API_KEY=API_KEY, prx=prx)
+                get_group_result(response=response_2, human=human, API_KEY=API_KEY, prx=prx)
 
-            human.is_checked = True
-            human.save()
+                human.is_checked = True
+                human.save()
+            except Exception as e:
+                print(e)
             postgre_db.close()
 
 
