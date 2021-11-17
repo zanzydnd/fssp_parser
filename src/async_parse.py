@@ -46,7 +46,7 @@ def make_group_request(API_KEY, humans, proxy):
                     else:
                         break
 
-                get_group_result(response=response_1, human=human, prx=prx)
+                get_group_result(response=response_1, human=human, prx=prx, API_KEY=API_KEY)
 
                 response_2 = requests.post(url=API_URI + "/search/group",
                                            json={"token": API_KEY, "request": second},
