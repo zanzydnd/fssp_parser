@@ -15,7 +15,7 @@ MONITORING_SERVICE_URL = "http://176.57.217.47/api/parser/report/"
 
 
 def make_group_request(API_KEY, humans, proxy):
-    prx = {"https": proxy}
+    prx = {"http": proxy}
 
     while True:
         postgre_db.connect()
@@ -153,7 +153,7 @@ if __name__ == '__main__':
             proxs.append(line)
 
     for key in keys:
-        data.append((key, hum[i * butch_size: i * butch_size + butch_size], "https://" + proxs[i]))
+        data.append((key, hum[i * butch_size: i * butch_size + butch_size], "http://" + proxs[i]))
         i += 1
 
     postgre_db.close()
