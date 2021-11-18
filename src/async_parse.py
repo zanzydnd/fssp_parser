@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
     for key in keys:
         data.append((key, hum[i * butch_size: i * butch_size + butch_size],
-                     "https://" + os.environ.get('PROXY_LOGIN') + ":" + os.environ.get("PROXY_PASS") + ":" + proxs[i]))
+                     "https://" + os.environ.get('PROXY_LOGIN') + ":" + os.environ.get("PROXY_PASS") + "@" + proxs[i]))
         print("https://" + os.environ.get('PROXY_LOGIN') + ":" + os.environ.get("PROXY_PASS") + ":" + proxs[i])
 
         i += 1
