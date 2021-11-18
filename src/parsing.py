@@ -32,7 +32,7 @@ from models import postgre_db, NotCheckedHuman, FSSPHuman, TaskCode, Statistic
 API_URI = "https://api-ip.fssp.gov.ru/api/v1.0"
 REGION_NUMBERS = [102, 116, 125, 138, 150, 154, 159, 161, 163, 173, 174, 118, 121, 93, 113, 123, 124]  # + 1-99
 load_dotenv(find_dotenv())
-API_KEY = sys.argv[1]
+API_KEY = "lHEVwMZtzBy9"
 MONITORING_SERVICE_URL = "http://176.57.217.47/api/parser/report/"
 
 
