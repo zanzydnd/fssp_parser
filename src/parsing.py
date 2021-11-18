@@ -133,15 +133,18 @@ def get_group_result(response, human):
         if result_item['result']:
             for record in result_item['result']:
                 data = {}
-                data['region'] = result_item['query']['params']['region']
-                data['name'] = record['name']
-                data['exe_production'] = record['exe_production']
-                data['details'] = record['details']
-                data['subject'] = record['subject']
-                data['department'] = record['department']
-                data['bailiff'] = record['bailiff']
-                data['ip_end'] = record['ip_end']
-                data_source.append(data)
+                try:
+                    data['region'] = result_item['query']['params']['region']
+                    data['name'] = record['name']
+                    data['exe_production'] = record['exe_production']
+                    data['details'] = record['details']
+                    data['subject'] = record['subject']
+                    data['department'] = record['department']
+                    data['bailiff'] = record['bailiff']
+                    data['ip_end'] = record['ip_end']
+                    data_source.append(data)
+                except Exception as e:
+                    pass
         else:
             continue
 
