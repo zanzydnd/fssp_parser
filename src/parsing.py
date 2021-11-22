@@ -144,7 +144,7 @@ def get_group_result(response, human):
                     data['ip_end'] = record['ip_end']
                     data_source.append(data)
                 except Exception as e:
-                    pass
+                    print("skip")
         else:
             continue
 
