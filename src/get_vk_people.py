@@ -2,6 +2,8 @@ import os
 import sys
 import csv
 import datetime
+import time
+
 import requests
 
 from dotenv import load_dotenv, find_dotenv
@@ -16,6 +18,7 @@ def get_it(filename: str, token: str):
         data = []
         for row in reader:
             id = row[1]
+            time.sleep(10)
             response_1 = requests.post(url="https://api.vk.com/method/users.get",
                                        params={"v": "5.131", "fields": "bdate", "name_case": "nom", "user_ids": id,
                                                "access_token": token},
