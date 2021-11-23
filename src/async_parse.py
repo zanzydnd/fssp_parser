@@ -26,7 +26,10 @@ def make_group_request(API_KEY, humans, proxy):
             # human.save()
 
             for i in range(1, 93):
-                map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": i}}
+                map = {"type": 1,
+                       "params": {"firstname": human.name, "lastname": human.lastname,
+                                  "birthdate": human.birth_date.strftime("%d.%m.%Y"),
+                                  "region": i}}
                 query.append(map)
             first = query[:50]
             second = query[50:]
@@ -141,10 +144,11 @@ if __name__ == '__main__':
 
     butch_size = int(len(
         NotCheckedHuman.select().where(
-            NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)) / len(
+            NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False) & NotCheckedHuman.birth_date != None) / len(
         keys) + 0.5)
 
-    hum = NotCheckedHuman.select().where(NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False)
+    hum = NotCheckedHuman.select().where(
+        NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False & NotCheckedHuman.birth_date != None)
     i = 0
 
     proxs = []

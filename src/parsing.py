@@ -45,7 +45,7 @@ def send_status_to_monitoring_service(status, description):
 def check_is_there_new_human_to_check():
     try:
         human = NotCheckedHuman.get(
-            NotCheckedHuman.is_checked == False and NotCheckedHuman.being_check == False)
+            NotCheckedHuman.is_checked == False and NotCheckedHuman.being_check == False and NotCheckedHuman.birth_date is not None)
         return human
     except Exception as e:
         f = open(os.path.join(os.path.abspath(os.path.curdir), "log_file.txt"), "w",
@@ -70,7 +70,8 @@ def make_group_request():
     human.being_check = True
     human.save()
     for i in range(1, 93):
-        map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname, "region": i}}
+        map = {"type": 1, "params": {"firstname": human.name, "lastname": human.lastname,
+                                     "birthdate": human.birth_date.strftime("%d.%m.%Y"), "region": i}}
         query.append(map)
     first = query[:50]
     second = query[50:]
@@ -155,23 +156,6 @@ def get_group_result(response, human):
     f = Statistic(task=tsk, num_of_new_records=len(data_source))
     f.save()
     FSSPHuman.insert_many(data_source).execute()
-
-
-# TODO: переделать
-def make_single_request():
-    postgre_db.connect()
-    human = NotCheckedHuman.get(NotCheckedHuman.is_checked == False)
-    map = {"token": os.environ.get("API_KEY"), "firstname": human.name, "lastname": human.lastname,
-           "region": human.region}
-    response = requests.get(url=API_URI + "/search/physical", params=map,
-                            headers={"User-Agent": "PostmanRuntime/7.28.4", "Content-Type": "application/json"})
-
-    task_code = response.json()['response']['task']
-    tsk = TaskCode(not_checked_humans_ids=[human.id], task_code=task_code)
-    tsk.save()
-    human.is_checked = True
-    human.save()
-    postgre_db.close()
 
 
 count = 0
