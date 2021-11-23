@@ -26,36 +26,23 @@ def get_it(filename: str, token: str):
                                                 "Content-Type": "application/json"})
 
             print(response_1.content)
-
-            for entity in response_1.json()['response']:
-                try:
-                    day, month, year = ["0" + i if len(i) == 1 else i for i in entity['bdate'].split(".")]
-                    print(day, month, year)
-                    map = {
-                        "lastname": entity['last_name'],
-                        "name": entity['first_name'],
-                        "birth_date": datetime.datetime.strptime(f'{day}.{month}.{year}', '%d.%m.%Y')
-                    }
-                    # data.append(map)
-                    postgre_db.connect()
-                    with postgre_db.atomic():
-                        NotCheckedHuman.insert(map).execute()
-                    postgre_db.close()
-                except Exception as e:
-                    print(e)
-                # if len(data) >= 50000:
-                #     postgre_db.connect()
-                #     with postgre_db.atomic():
-                #         NotCheckedHuman.insert_many(data).execute()
-                #     postgre_db.close()
-                #     data.clear()
-
-        # if data:
-        #     postgre_db.connect()
-        #     with postgre_db.atomic():
-        #         NotCheckedHuman.insert_many(data).execute()
-        #     postgre_db.close()
-        #     data.clear()
-
+            try:
+                for entity in response_1.json()['response']:
+                    try:
+                        day, month, year = ["0" + i if len(i) == 1 else i for i in entity['bdate'].split(".")]
+                        print(day, month, year)
+                        map = {
+                            "lastname": entity['last_name'],
+                            "name": entity['first_name'],
+                            "birth_date": datetime.datetime.strptime(f'{day}.{month}.{year}', '%d.%m.%Y')
+                        }
+                        postgre_db.connect()
+                        with postgre_db.atomic():
+                            NotCheckedHuman.insert(map).execute()
+                        postgre_db.close()
+                    except Exception as e:
+                        print(e)
+            except Exception as e:
+                print(e)
 
 get_it(sys.argv[1], sys.argv[2])
