@@ -142,10 +142,10 @@ if __name__ == '__main__':
 
     data = []
 
-    butch_size = int(len(
+    butch_size = int(
         NotCheckedHuman.select().where(
-            NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False) & NotCheckedHuman.birth_date != None) / len(
-        keys) + 0.5)
+            NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False & NotCheckedHuman.birth_date != None).count() / len(
+            keys) + 0.5)
 
     hum = NotCheckedHuman.select().where(
         NotCheckedHuman.is_checked == False & NotCheckedHuman.being_check == False & NotCheckedHuman.birth_date != None)
