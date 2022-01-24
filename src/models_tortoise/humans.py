@@ -5,6 +5,7 @@ from tortoise import Model, fields
 
 class NotCheckedHuman(Model):
     id = fields.IntField(index=True, pk=True)
+    name = fields.CharField(max_length=100, null=False)
     lastname = fields.CharField(max_length=100, null=False)
     secondname = fields.CharField(max_length=100, null=True)
     birth_date = fields.DatetimeField(null=True)
