@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 import requests
 from dotenv import load_dotenv, find_dotenv
@@ -172,11 +173,13 @@ async def run_parser():
     limit = int(count * 0.3)
     offset_max = count // limit
     print(offset_max)
+    all_ofsets_nums = [i for i in range(offset_max)]
     while True:
-        for i in range(offset_max):
-            humans = await NotCheckedHuman.filter(name__not_isnull=True, lastname__not_isnull=True,
-                                                  birth_date__not_isnull=True).limit(limit).offset(i)
-            await make_request(humans)
+        random_position = random.randint(0, len(all_ofsets_nums))
+        humans = await NotCheckedHuman.filter(name__not_isnull=True, lastname__not_isnull=True,
+                                              birth_date__not_isnull=True).limit(limit).offset(random_position)
+
+        await make_request(humans)
 
 
 asyncio.run(run_parser())
